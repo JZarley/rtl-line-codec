@@ -8,8 +8,8 @@ module bit_tick_gen #(
     output logic bit_tick
 );
 
-    // IMPORTANT: Assumes cycles per bit / clk Hz has no remainder
-    // Eventually, should fix or enforce
+    // IMPORTANT: Assumes CLK_HZ / BIT_RATE has no remainder
+    // Eventually, should enforce or implement workaround
     
     localparam int CYCLES_PER_BIT = CLK_HZ / BIT_RATE;
     localparam int COUNT_WIDTH = (CYCLES_PER_BIT <= 1) ? 1 : $clog2(CYCLES_PER_BIT);
