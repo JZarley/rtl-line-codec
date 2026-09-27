@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module deserializer #(
     parameter int DATA_WIDTH = 8
 )(
@@ -36,10 +38,10 @@ module deserializer #(
             else if (bit_valid) begin
 
                 // Store the current bit (MSB-first)
-                data_reg[DATA_WIDTH - 1 - index] <= bit_in;
+                data_reg[DATA_WIDTH - 1 - int'(index)] <= bit_in;
 
                 // If we're at the last bit of data, the word is complete
-                if (index == DATA_WIDTH - 1) begin
+                if (int'(index) == DATA_WIDTH - 1) begin
                     data_valid <= 1'b1;
                 end
 

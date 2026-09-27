@@ -1,5 +1,7 @@
+`timescale 1ns / 1ps
+
 module nrz_decoder #(
-    parameter int DEFAULT_OUT = 1'b0
+    parameter logic DEFAULT_OUT = 1'b0
 )(
     input logic clk,
     input logic reset, 

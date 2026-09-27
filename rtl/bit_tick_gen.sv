@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module bit_tick_gen #(
     parameter int CLK_HZ = 100_000_000,
     parameter int BIT_RATE = 1_000_000
@@ -24,7 +26,7 @@ module bit_tick_gen #(
         else begin
             bit_tick <= 1'b0;
             
-            if (count == CYCLES_PER_BIT - 1) begin
+            if (int'(count) == CYCLES_PER_BIT - 1) begin
                 count <= '0;
                 bit_tick <= 1'b1;
             end

@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module nrz_encoder #(
     parameter logic DEFAULT_OUT = 1'b0
 )(

@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module serializer #(
     parameter int DATA_WIDTH = 8
 )(
@@ -35,7 +37,7 @@ module serializer #(
             // If we do have data and downstream is ready, a handshake occurs
             else if (bit_ready) begin
                 // If we're at the last bit of data, try to load more data
-                if (index == DATA_WIDTH - 1) begin
+                if (int'(index) == DATA_WIDTH - 1) begin
                     // If the input data is valid, take it
                     if (data_valid) begin
                         data_reg <= data_in;
@@ -55,9 +57,9 @@ module serializer #(
         end
     end
 
-    assign bit_out = data_reg[DATA_WIDTH - 1 - index]; // MSB-first
+    assign bit_out = data_reg[DATA_WIDTH - 1 - int'(index)]; // MSB-first
     assign data_ready = !reset &&
                         (!bit_valid || 
                         (bit_ready && 
-                        (index == DATA_WIDTH - 1)));
+                        (int'(index) == DATA_WIDTH - 1)));
 endmodule
