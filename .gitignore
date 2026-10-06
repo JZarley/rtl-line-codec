@@ -1,4 +1,24 @@
+# Verilator
 obj_dir/
 results/
 *.vcd
 *.fst
+
+# Vivado generated project data
+vivado/**/*.cache/
+vivado/**/*.hw/
+vivado/**/*.ip_user_files/
+vivado/**/*.runs/
+vivado/**/*.sim/
+vivado/**/*.gen/
+
+# Vivado temporary/log files
+*.jou
+*.log
+*.str
+*.lpr
+*.wdf
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

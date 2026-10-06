@@ -47,6 +47,10 @@ module nrz_pipeline #(
         .bit_tick(tx_bit_tick)
     );
 
+    logic tx_bit_transfer;
+
+    assign tx_bit_transfer = serialized_valid && serialized_ready;
+
     // For initial testing, the encoded result will be sampled 1 clock cycle behind the transmitter's bit tick
     // NOT REAL RX TIMING RECOVERY
     always_ff @(posedge clk) begin
@@ -54,7 +58,7 @@ module nrz_pipeline #(
             rx_bit_tick <= 1'b0;
         end
         else begin
-            rx_bit_tick <= tx_bit_tick;
+            rx_bit_tick <= tx_bit_transfer;
         end
     end
     
