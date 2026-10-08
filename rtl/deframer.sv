@@ -67,7 +67,7 @@ module deframer (
                 input_ready = 1'b1;
             end
             DESCRIPTOR: begin
-                input_ready = 1'b1;
+                frame_start = 1'b1;
             end
             PAYLOAD: begin
                 payload_data = input_data;
