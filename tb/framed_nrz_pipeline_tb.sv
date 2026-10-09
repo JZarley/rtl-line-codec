@@ -40,6 +40,11 @@ module framed_nrz_pipeline_tb;
     logic       rx_payload_valid;
     logic       rx_payload_ready;
 
+    logic randomize_rx_backpressure;
+
+    integer descriptor_ready_hold;
+    integer payload_ready_hold;
+
 
     // ============================================================
     // Expected-output queues
@@ -72,6 +77,59 @@ module framed_nrz_pipeline_tb;
     initial clk = 1'b0;
 
     always #5 clk <= ~clk;
+
+
+    // ============================================================
+    // Randomized RX backpressure
+    //
+    // When enabled, descriptor and payload ready each remain in a
+    // randomly-selected state for multiple cycles. Long hold periods
+    // are intentional so stalls last long enough for bytes to build
+    // up in the RX FIFO.
+    // ============================================================
+
+    always @(negedge clk) begin
+        if (reset || !randomize_rx_backpressure) begin
+            rx_frame_start_ready <= 1'b1;
+            rx_payload_ready     <= 1'b1;
+
+            descriptor_ready_hold <= 0;
+            payload_ready_hold    <= 0;
+        end
+        else begin
+
+            // Descriptor consumer
+            if (descriptor_ready_hold == 0) begin
+
+                // Ready about 65% of randomly-selected intervals.
+                rx_frame_start_ready <=
+                    ($urandom_range(99, 0) < 65);
+
+                descriptor_ready_hold <=
+                    $urandom_range(200, 10);
+            end
+            else begin
+                descriptor_ready_hold <=
+                    descriptor_ready_hold - 1;
+            end
+
+
+            // Payload consumer
+            if (payload_ready_hold == 0) begin
+
+                // Ready about 65% of randomly-selected intervals.
+                rx_payload_ready <=
+                    ($urandom_range(99, 0) < 65);
+
+                payload_ready_hold <=
+                    $urandom_range(200, 10);
+            end
+            else begin
+                payload_ready_hold <=
+                    payload_ready_hold - 1;
+            end
+        end
+    end
 
 
     // ============================================================
@@ -305,8 +363,7 @@ module framed_nrz_pipeline_tb;
             tx_frame_start   = 1'b0;
             tx_payload_valid = 1'b0;
 
-            rx_frame_start_ready = 1'b1;
-            rx_payload_ready     = 1'b1;
+            randomize_rx_backpressure = 1'b0;
 
             repeat (3) @(posedge clk);
 
@@ -396,7 +453,7 @@ module framed_nrz_pipeline_tb;
         begin
             expected_payload_queue.push_back(value);
 
-            gap_cycles = $urandom_range(0, 5);
+            gap_cycles = $urandom_range(5, 0);
 
             repeat (gap_cycles) begin
                 @(negedge clk);
@@ -528,10 +585,7 @@ module framed_nrz_pipeline_tb;
         tx_payload_data  = '0;
         tx_payload_valid = 1'b0;
 
-        // INITIAL INTEGRATION VERSION:
-        // receiver never intentionally stalls.
-        rx_frame_start_ready = 1'b1;
-        rx_payload_ready     = 1'b1;
+        randomize_rx_backpressure = 1'b0;
 
 
         // --------------------------------------------------------
@@ -752,18 +806,21 @@ module framed_nrz_pipeline_tb;
 
 
         // --------------------------------------------------------
-        // 10. Randomized end-to-end frames
+        // 10. Randomized end-to-end stress
         //
-        // RX remains continuously ready in this initial version.
         // Randomness is applied to:
         // - type
         // - sequence
         // - length
         // - payload values
-        // - producer timing
+        // - TX producer timing
+        // - RX descriptor backpressure
+        // - RX payload backpressure
         // --------------------------------------------------------
 
-        $display("TEST 10: randomized end-to-end stress");
+        $display("TEST 10: randomized end-to-end stress with RX backpressure");
+
+        randomize_rx_backpressure = 1'b1;
 
         for (
             frame_index = 0;
@@ -771,9 +828,9 @@ module framed_nrz_pipeline_tb;
             frame_index = frame_index + 1
         ) begin
 
-            random_type   = 8'($urandom_range(0, 255));
-            random_seq    = 8'($urandom_range(0, 255));
-            random_length = 8'($urandom_range(0, 20));
+            random_type     = 8'($urandom_range(255, 0));
+            random_seq      = 8'($urandom_range(255, 0));
+            random_length   = 8'($urandom_range(20, 0));
 
             start_tx_frame(
                 random_type,
@@ -788,7 +845,7 @@ module framed_nrz_pipeline_tb;
             ) begin
 
                 random_payload =
-                    8'($urandom_range(0, 255));
+                    8'($urandom_range(255, 0));
 
                 send_tx_payload_byte_random(
                     random_payload
@@ -799,6 +856,9 @@ module framed_nrz_pipeline_tb;
         wait_for_all_received(500000);
 
         verify_empty();
+
+        randomize_rx_backpressure = 1'b0;
+        @(negedge clk);
 
 
         // --------------------------------------------------------

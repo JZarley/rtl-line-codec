@@ -1,9 +1,10 @@
 `timescale 1ns/1ps
 
 module framed_nrz_pipeline #(
-    parameter int DATA_WIDTH = 8,
-    parameter int CLK_HZ     = 100_000_000,
-    parameter int BIT_RATE   = 1_000_000
+    parameter int DATA_WIDTH    = 8,
+    parameter int CLK_HZ        = 100_000_000,
+    parameter int BIT_RATE      = 1_000_000,
+    parameter int RX_FIFO_DEPTH = 32
 )(
     input logic clk,
     input logic reset,
@@ -56,13 +57,20 @@ module framed_nrz_pipeline #(
     logic       framed_ready;
 
     // ------------------------------------------------------------
-    // NRZ pipeline -> deframer byte stream
+    // NRZ pipeline -> RX FIFO byte stream
     // ------------------------------------------------------------
 
     logic [7:0] received_data;
     logic       received_valid;
     logic       received_ready;
 
+    // ------------------------------------------------------------
+    // RX FIFO -> deframer byte stream
+    // ------------------------------------------------------------
+
+    logic [7:0] fifo_output_data;
+    logic       fifo_output_valid;
+    logic       fifo_output_ready;
 
     // ============================================================
     // TX framer
@@ -112,6 +120,27 @@ module framed_nrz_pipeline #(
 
 
     // ============================================================
+    // RX FIFO
+    // ============================================================
+
+    sync_fifo #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .DATA_DEPTH(RX_FIFO_DEPTH)
+    ) rx_fifo (
+        .clk(clk),
+        .reset(reset),
+
+        .input_data(received_data),
+        .input_valid(received_valid),
+        .input_ready(received_ready),
+
+        .output_data(fifo_output_data),
+        .output_valid(fifo_output_valid),
+        .output_ready(fifo_output_ready)
+    );
+
+
+    // ============================================================
     // RX deframer
     // ============================================================
 
@@ -119,9 +148,9 @@ module framed_nrz_pipeline #(
         .clk               (clk),
         .reset             (reset),
 
-        .input_data        (received_data),
-        .input_valid       (received_valid),
-        .input_ready       (received_ready),
+        .input_data        (fifo_output_data),
+        .input_valid       (fifo_output_valid),
+        .input_ready       (fifo_output_ready),
 
         .frame_start       (rx_frame_start),
         .frame_start_ready (rx_frame_start_ready),
