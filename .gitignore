@@ -19,6 +19,9 @@ vivado/**/*.gen/
 *.lpr
 *.wdf
 
+# Vivado imported sources and generated checkpoints
+vivado/**/*.srcs/
+
 # OS/editor noise
 .DS_Store
 Thumbs.db

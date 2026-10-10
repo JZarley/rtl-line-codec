@@ -564,7 +564,8 @@ module framer_tb;
 
         $display("TEST 5: payload backpressure");
 
-        frame_ready = 1'b1;
+        // Stall the output while preparing the frame.
+        frame_ready = 1'b0;
 
         start_frame(
             FRAME_TYPE_DATA,
@@ -572,21 +573,17 @@ module framer_tb;
             8'd1
         );
 
-        // Allow header to advance while payload is already waiting.
         expected_queue.push_back(8'hC7);
 
         @(negedge clk);
-
         payload_data  = 8'hC7;
         payload_valid = 1'b1;
 
-        // Wait until PAYLOAD is reached.
-        while (!payload_ready) begin
-            @(negedge clk);
+        // Transfer the four header bytes individually.
+        // Leave the output stalled before the payload transfers.
+        repeat (4) begin
+            accept_one_output();
         end
-
-        @(negedge clk);
-        frame_ready = 1'b0;
 
         repeat (3) begin
             @(negedge clk);
@@ -611,6 +608,7 @@ module framer_tb;
                 );
         end
 
+        // Release backpressure and accept the payload.
         @(negedge clk);
         frame_ready = 1'b1;
 
